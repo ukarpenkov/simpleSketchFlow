@@ -9,7 +9,7 @@ export let skiaCanvas: Canvas;
 export async function initSkia(canvasId: string): Promise<void> {
   try {
     ck = await CanvasKitInit({
-      locateFile: (file) => `/${file}`,
+      locateFile: (file) => `${import.meta.env.BASE_URL}${file}`,
     });
     surface = ck.MakeSWCanvasSurface(canvasId);
     if (!surface) {
