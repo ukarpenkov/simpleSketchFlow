@@ -111,8 +111,13 @@ function drawShape(ck: CanvasKit, canvas: Canvas, paint: Paint, shape: any): voi
     console.log(`  [Skia] rect local: x=${shape.x}, y=${shape.y}, w=${shape.width}, h=${shape.height}`);
     canvas.drawRect(rect, paint);
   } else if (shape instanceof PIXI.Ellipse) {
-    const rect = ck.XYWHRect(shape.x - shape.width / 2, shape.y - shape.height / 2, shape.width, shape.height);
-    console.log(`  [Skia] ellipse local: cx=${shape.x}, cy=${shape.y}, w=${shape.width}, h=${shape.height}`);
+    // Pixi Ellipse.width/height are radii (semi-axes), not full diameters
+    const rect = ck.XYWHRect(
+      shape.x - shape.width,
+      shape.y - shape.height,
+      shape.width * 2,
+      shape.height * 2,
+    );
     canvas.drawOval(rect, paint);
   } else if (shape instanceof PIXI.Polygon) {
     const points = shape.points;

@@ -75,12 +75,10 @@ function drawShape(
   if (shape instanceof PIXI.Ellipse) {
     const segments = 32;
     const parts: string[] = [];
-    const halfW = shape.width / 2;
-    const halfH = shape.height / 2;
     for (let i = 0; i <= segments; i++) {
       const t = (i / segments) * Math.PI * 2;
-      const lx = shape.x + halfW * Math.cos(t);
-      const ly = shape.y + halfH * Math.sin(t);
+      const lx = shape.x + shape.width * Math.cos(t);
+      const ly = shape.y + shape.height * Math.sin(t);
       const p = transformPoint(wt, lx, ly, pageHeight);
       parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
     }

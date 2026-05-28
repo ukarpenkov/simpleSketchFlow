@@ -35,7 +35,7 @@ export async function initSkia(canvasId: string): Promise<void> {
 export function renderSkiaScene(container: Container): void {
   if (!surface || !ck || !skiaCanvas) return;
   container.updateTransform();
-  const darkBg = ck.Color(0.1, 0.1, 0.18, 1);
+  const darkBg = ck.parseColorString('#1a1a2e');
   skiaCanvas.clear(darkBg);
   convertPixiContainerToSkia(ck, skiaCanvas, container);
   surface.flush();
