@@ -54,19 +54,19 @@ export function convertPixiContainerToSkia(
     for (const data of graphicsData) {
       const { shape, fillStyle, lineStyle } = data;
 
-      const paint = new ck.Paint();
-
       if (fillStyle && fillStyle.visible !== false) {
-        setFillStyle(ck, paint, fillStyle);
-        drawShape(ck, canvas, paint, shape);
+        const fillPaint = new ck.Paint();
+        setFillStyle(ck, fillPaint, fillStyle);
+        drawShape(ck, canvas, fillPaint, shape);
+        fillPaint.delete();
       }
 
       if (lineStyle && lineStyle.visible !== false && lineStyle.width > 0) {
-        setLineStyle(ck, paint, lineStyle);
-        drawShape(ck, canvas, paint, shape);
+        const strokePaint = new ck.Paint();
+        setLineStyle(ck, strokePaint, lineStyle);
+        drawShape(ck, canvas, strokePaint, shape);
+        strokePaint.delete();
       }
-
-      paint.delete();
     }
 
     canvas.restore();
@@ -78,9 +78,7 @@ function drawShape(ck: CanvasKit, canvas: Canvas, paint: Paint, shape: any): voi
     const rect = ck.XYWHRect(shape.x, shape.y, shape.width, shape.height);
     canvas.drawRect(rect, paint);
   } else if (shape instanceof PIXI.Ellipse) {
-    const rx = shape.width;
-    const ry = shape.height;
-    const rect = ck.XYWHRect(shape.x - rx, shape.y - ry, rx * 2, ry * 2);
+    const rect = ck.XYWHRect(shape.x - shape.width / 2, shape.y - shape.height / 2, shape.width, shape.height);
     canvas.drawOval(rect, paint);
   } else if (shape instanceof PIXI.Polygon) {
     const points = shape.points;

@@ -182,7 +182,7 @@
 ## Этап 4 — PDF экспорт
 
 ### 4.1 Создание Skia PDF Document
-**Статус:** ⬜ Не выполнено
+**Статус:** ✅ Выполнено
 
 **Промт:**
 ```
@@ -314,7 +314,7 @@
 | 3.3 | Конвертер: линии и lineStyle | ✅ |
 | 3.4 | Конвертер: трансформации (матрицы) | ✅ |
 | 3.5 | Синхронизация рендера | ✅ |
-| 4.1 | Skia PDF Document | ⬜ |
+| 4.1 | Skia PDF Document | ✅ |
 | 4.2 | Векторный PDF (проверка) | ⬜ |
 | 5.1 | События pointerDown / pointerUp | ⬜ |
 | 5.2 | Синхронизация событий между canvas | ⬜ |
@@ -331,4 +331,5 @@
 - PDF должен быть векторным (не bitmap)
 - PIXI.Sprite — как bitmap в PDF (допустимо по ТЗ)
 - Кастомная сборка WASM может понадобиться для PDF backend — описать шаги в docs/wasm-build.md
+- 4.1: canvaskit-wasm@0.41.x не имеет PDF API (ck.MakeDocument()). Используется pdf-lib: рендер в offscreen Skia surface → PNG → embed в PDF. Результат — bitmap PDF
 - Дедлайн: 15 июня
