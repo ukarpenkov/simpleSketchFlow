@@ -4,11 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SimpleSketchFlow</title>
+  <link rel="stylesheet" href="/src/ui/styles.css">
 </head>
 <body>
   <div id="app">
-    <canvas id="pixi-canvas" width="800" height="600"></canvas>
-    <canvas id="skia-canvas" width="800" height="600"></canvas>
+    <h1>simpleSketchFlow</h1>
+    <div class="canvas-row">
+      <div class="canvas-wrapper">
+        <label>Pixi.js Canvas</label>
+        <canvas id="pixi-canvas" width="800" height="600"></canvas>
+      </div>
+      <div class="canvas-wrapper">
+        <label>Skia Canvas</label>
+        <canvas id="skia-canvas" width="800" height="600"></canvas>
+      </div>
+    </div>
     <div id="controls">
       <button id="btn-generate">Сгенерировать</button>
       <button id="btn-export">Экспорт PDF</button>
