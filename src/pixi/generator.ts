@@ -2,6 +2,8 @@ import * as PIXI from 'pixi.js';
 
 type ShapeType = 'rect' | 'ellipse' | 'line';
 
+let shapeCounter = 0;
+
 function randomRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
@@ -46,6 +48,7 @@ function createRandomGraphics(): PIXI.Graphics {
     Math.floor(Math.random() * 3)
   ];
   const g = new PIXI.Graphics();
+  const shapeId = `shape_${++shapeCounter}`;
 
   switch (shape) {
     case 'rect':
@@ -58,6 +61,19 @@ function createRandomGraphics(): PIXI.Graphics {
       drawLine(g);
       break;
   }
+
+  g.eventMode = 'static';
+  g.cursor = 'pointer';
+
+  g.on('pointerdown', () => {
+    console.log(`${shapeId} pointerdown`);
+    g.tint = 0xff0000;
+  });
+
+  g.on('pointerup', () => {
+    console.log(`${shapeId} pointerup`);
+    g.tint = 0xffffff;
+  });
 
   return g;
 }
