@@ -11,19 +11,15 @@ function colorToRgb(color: number): [number, number, number] {
   ];
 }
 
-function toPdfY(canvasY: number, pageHeight: number): number {
-  return pageHeight - canvasY;
-}
-
 function transformPoint(
   wt: PIXI.Matrix,
   x: number,
   y: number,
-  pageHeight: number,
 ): { x: number; y: number } {
-  const canvasX = wt.a * x + wt.c * y + wt.tx;
-  const canvasY = wt.b * x + wt.d * y + wt.ty;
-  return { x: canvasX, y: toPdfY(canvasY, pageHeight) };
+  return {
+    x: wt.a * x + wt.c * y + wt.tx,
+    y: wt.b * x + wt.d * y + wt.ty,
+  };
 }
 
 function styleOpts(fillStyle: any, lineStyle: any): Record<string, unknown> {
@@ -37,9 +33,24 @@ function styleOpts(fillStyle: any, lineStyle: any): Record<string, unknown> {
     const [r, g, b] = colorToRgb(lineStyle.color);
     opts.borderColor = rgb(r, g, b);
     opts.borderWidth = lineStyle.width;
-    opts.opacity = lineStyle.alpha ?? 1;
+    opts.borderOpacity = lineStyle.alpha ?? 1;
   }
   return opts;
+}
+
+/** pdf-lib drawSvgPath already flips Y via scale(1,-1); anchor with y = page height. */
+function drawPathOnPage(
+  page: any,
+  path: string,
+  pageHeight: number,
+  fillStyle: any,
+  lineStyle: any,
+): void {
+  page.drawSvgPath(path, {
+    ...styleOpts(fillStyle, lineStyle),
+    x: 0,
+    y: pageHeight,
+  });
 }
 
 function drawShape(
@@ -61,14 +72,14 @@ function drawShape(
       { x: x + w, y },
       { x: x + w, y: y + h },
       { x, y: y + h },
-    ].map((c) => transformPoint(wt, c.x, c.y, pageHeight));
+    ].map((c) => transformPoint(wt, c.x, c.y));
 
     const path =
       `M ${corners[0].x} ${corners[0].y} ` +
       `L ${corners[1].x} ${corners[1].y} ` +
       `L ${corners[2].x} ${corners[2].y} ` +
       `L ${corners[3].x} ${corners[3].y} Z`;
-    page.drawSvgPath(path, styleOpts(fillStyle, lineStyle));
+    drawPathOnPage(page, path, pageHeight, fillStyle, lineStyle);
     return;
   }
 
@@ -79,11 +90,11 @@ function drawShape(
       const t = (i / segments) * Math.PI * 2;
       const lx = shape.x + shape.width * Math.cos(t);
       const ly = shape.y + shape.height * Math.sin(t);
-      const p = transformPoint(wt, lx, ly, pageHeight);
+      const p = transformPoint(wt, lx, ly);
       parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
     }
     parts.push('Z');
-    page.drawSvgPath(parts.join(' '), styleOpts(fillStyle, lineStyle));
+    drawPathOnPage(page, parts.join(' '), pageHeight, fillStyle, lineStyle);
     return;
   }
 
@@ -93,14 +104,14 @@ function drawShape(
 
     const parts: string[] = [];
     for (let i = 0; i < pts.length; i += 2) {
-      const p = transformPoint(wt, pts[i], pts[i + 1], pageHeight);
+      const p = transformPoint(wt, pts[i], pts[i + 1]);
       parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
     }
     if (shape.closeStroke) parts.push('Z');
     const path = parts.join(' ');
     if (!path) return;
 
-    page.drawSvgPath(path, styleOpts(fillStyle, lineStyle));
+    drawPathOnPage(page, path, pageHeight, fillStyle, lineStyle);
   }
 }
 
