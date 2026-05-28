@@ -41,11 +41,10 @@ function drawLine(g: PIXI.Graphics): void {
   g.lineTo(x2, y2);
 }
 
-export function generateRandomShape(container: PIXI.Container): void {
+function createRandomGraphics(): PIXI.Graphics {
   const shape: ShapeType = (['rect', 'ellipse', 'line'] as const)[
     Math.floor(Math.random() * 3)
   ];
-
   const g = new PIXI.Graphics();
 
   switch (shape) {
@@ -60,6 +59,36 @@ export function generateRandomShape(container: PIXI.Container): void {
       break;
   }
 
-  g.position.set(randomRange(0, 800), randomRange(0, 600));
-  container.addChild(g);
+  return g;
+}
+
+function applyTransform(obj: PIXI.Container): void {
+  obj.position.set(randomRange(0, 800), randomRange(0, 600));
+  obj.angle = randomRange(0, 360);
+  const sx = randomRange(0.5, 2.0);
+  const sy = randomRange(0.5, 2.0);
+  obj.scale.set(sx, sy);
+}
+
+export function generateRandomShape(container: PIXI.Container): void {
+  const useSubContainer = Math.random() < 0.3;
+
+  if (useSubContainer) {
+    const sub = new PIXI.Container();
+    const count = Math.floor(randomRange(2, 4)); // 2-3 shapes
+    for (let i = 0; i < count; i++) {
+      const g = createRandomGraphics();
+      g.position.set(randomRange(-50, 50), randomRange(-50, 50));
+      g.angle = randomRange(0, 360);
+      const s = randomRange(0.5, 2.0);
+      g.scale.set(s, s);
+      sub.addChild(g);
+    }
+    applyTransform(sub);
+    container.addChild(sub);
+  } else {
+    const g = createRandomGraphics();
+    applyTransform(g);
+    container.addChild(g);
+  }
 }
