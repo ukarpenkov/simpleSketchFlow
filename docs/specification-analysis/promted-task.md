@@ -285,18 +285,37 @@
 
 ---
 
-### 6.3 Деплой
+### 6.3 Деплой на GitHub Pages
 **Статус:** ⬜ Не выполнено
 
 **Промт:**
 ```
-Подготовь деплой:
-1. npm run build — без ошибок
-2. vite.config.ts: base path для GitHub Pages (/simpleSketchFlow/)
-3. Задеплой на GitHub Pages или Vercel
-4. Проверь: фигуры генерируются, Skia рендерит, PDF скачивается
+Настрой деплой на GitHub Pages:
+
+1. vite.config.ts — добавь base: '/simpleSketchFlow/' (имя репозитория)
+2. Создай .github/workflows/deploy.yml:
+   - Триггер: push на ветку main
+   - Jobs:
+     a) build: ubuntu-latest, node 18+
+        - actions/checkout
+        - actions/setup-node
+        - npm ci
+        - npm run build
+        - actions/upload-artifact (dist/)
+     b) deploy: needs build, runs-on ubuntu-latest
+        - permissions: pages write, id-token write
+        - actions/deploy-pages (artifact name: github-pages)
+   - Настройки окружения: name: github-pages, url: ${{ steps.deployment.outputs.page_url }}
+3. В GitHub репозитории: Settings → Pages → Source = "GitHub Actions"
+4. npm run build — убедись что нет ошибок
+5. Закоммить и запушь на main
+6. Проверь: Actions запустился, деплой прошёл
+7. Проверь по ссылке https://<username>.github.io/simpleSketchFlow/:
+   - Фигуры генерируются
+   - Skia рендерит
+   - PDF скачивается
 ```
-**Критерий:** Работающая ссылка на захостенное приложение.
+**Критерий:** Работающая ссылка на GitHub Pages, приложение полностью функционально.
 
 ---
 
@@ -320,7 +339,7 @@
 | 5.2 | Синхронизация событий между canvas | ✅ |
 | 6.1 | Стилизация UI | ✅ |
 | 6.2 | README и инструкция | ⬜ |
-| 6.3 | Деплой | ⬜ |
+| 6.3 | Деплой на GitHub Pages | ⬜ |
 
 ---
 
