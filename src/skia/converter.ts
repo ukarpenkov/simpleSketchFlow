@@ -10,9 +10,11 @@ function colorToHex(color: number): string {
 
 function applyTransform(ck: CanvasKit, canvas: Canvas, obj: PIXI.DisplayObject): void {
   const wt = obj.worldTransform;
+  // Skia uses row-major: [scaleX, skewX, 0, skewY, scaleY, 0, tx, ty, 1]
+  // Pixi uses column-major: a=scaleX, b=skewY, c=skewX, d=scaleY
   const matrix = new Float32Array([
-    wt.a, wt.b, 0,
-    wt.c, wt.d, 0,
+    wt.a,  wt.c,  0,
+    wt.b,  wt.d,  0,
     wt.tx, wt.ty, 1,
   ]);
   canvas.save();
