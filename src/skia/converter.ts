@@ -1,6 +1,9 @@
 import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
 import * as PIXI from 'pixi.js';
 
+// NOTE: PIXI.Sprite (bitmap images) is skipped here — it would be embedded
+// as a bitmap in PDF export. This is acceptable per the specification.
+
 function colorToHex(color: number): string {
   return '#' + (color & 0xFFFFFF).toString(16).padStart(6, '0');
 }

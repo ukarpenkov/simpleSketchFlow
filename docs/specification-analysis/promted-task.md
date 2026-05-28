@@ -202,7 +202,7 @@
 ---
 
 ### 4.2 Проверка векторного PDF (не bitmap)
-**Статус:** ⬜ Не выполнено
+**Статус:** ✅ Выполнено
 
 **Промт:**
 ```
@@ -315,7 +315,7 @@
 | 3.4 | Конвертер: трансформации (матрицы) | ✅ |
 | 3.5 | Синхронизация рендера | ✅ |
 | 4.1 | Skia PDF Document | ✅ |
-| 4.2 | Векторный PDF (проверка) | ⬜ |
+| 4.2 | Векторный PDF (проверка) | ✅ |
 | 5.1 | События pointerDown / pointerUp | ⬜ |
 | 5.2 | Синхронизация событий между canvas | ⬜ |
 | 6.1 | Стилизация UI | ⬜ |
@@ -331,5 +331,5 @@
 - PDF должен быть векторным (не bitmap)
 - PIXI.Sprite — как bitmap в PDF (допустимо по ТЗ)
 - Кастомная сборка WASM может понадобиться для PDF backend — описать шаги в docs/wasm-build.md
-- 4.1: canvaskit-wasm@0.41.x не имеет PDF API (ck.MakeDocument()). Используется pdf-lib: рендер в offscreen Skia surface → PNG → embed в PDF. Результат — bitmap PDF
+- 4.1: canvaskit-wasm@0.41.x не имеет PDF API (ck.MakeDocument()). Используется pdf-lib: Shapes читаются из Pixi и рисуются через pdf-lib drawSvgPath — результат векторный PDF. Шаги сборки кастомного WASM с PDF backend описаны в docs/wasm-build.md
 - Дедлайн: 15 июня
