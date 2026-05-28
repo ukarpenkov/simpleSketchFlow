@@ -1,6 +1,7 @@
 import { PDFDocument, rgb } from 'pdf-lib';
 import * as PIXI from 'pixi.js';
 import type { Container } from 'pixi.js';
+import { resetShapeIndex } from '../debug/coordLog';
 
 function colorToRgb(color: number): [number, number, number] {
   return [
@@ -108,6 +109,8 @@ function drawShape(
   }
 }
 
+let pdfShapeIdx = 0;
+
 function processGraphics(
   page: any,
   graphics: PIXI.Graphics,
@@ -117,11 +120,51 @@ function processGraphics(
 
   for (const data of graphicsData) {
     const { shape, fillStyle, lineStyle } = data;
+    const idx = pdfShapeIdx++;
+    const shapeType = shape instanceof PIXI.Rectangle ? 'rect'
+      : shape instanceof PIXI.Ellipse ? 'ellipse'
+      : shape instanceof PIXI.Polygon ? 'polygon' : 'unknown';
+    console.log(
+      `%c[PDF] shape #${idx} — ${shapeType}:`,
+      'color: #51cf66; font-weight: bold',
+      'wt:', {
+        a: +wt.a.toFixed(4), b: +wt.b.toFixed(4),
+        c: +wt.c.toFixed(4), d: +wt.d.toFixed(4),
+        tx: +wt.tx.toFixed(2), ty: +wt.ty.toFixed(2),
+      },
+    );
+    if (shape instanceof PIXI.Rectangle) {
+      const x = shape.x, y = shape.y, w = shape.width, h = shape.height;
+      const corners = [
+        { x: wt.a * x + wt.c * y + wt.tx, y: wt.b * x + wt.d * y + wt.ty },
+        { x: wt.a * (x+w) + wt.c * y + wt.tx, y: wt.b * (x+w) + wt.d * y + wt.ty },
+        { x: wt.a * (x+w) + wt.c * (y+h) + wt.tx, y: wt.b * (x+w) + wt.d * (y+h) + wt.ty },
+        { x: wt.a * x + wt.c * (y+h) + wt.tx, y: wt.b * x + wt.d * (y+h) + wt.ty },
+      ];
+      console.log(`  local: x=${x}, y=${y}, w=${w}, h=${h}`);
+      console.log('  world corners:', corners.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2) })));
+    } else if (shape instanceof PIXI.Ellipse) {
+      const cx = wt.a * shape.x + wt.c * shape.y + wt.tx;
+      const cy = wt.b * shape.x + wt.d * shape.y + wt.ty;
+      console.log(`  local: cx=${shape.x}, cy=${shape.y}, w=${shape.width}, h=${shape.height}`);
+      console.log('  world center:', { x: +cx.toFixed(2), y: +cy.toFixed(2) });
+    } else if (shape instanceof PIXI.Polygon) {
+      const pts = shape.points;
+      const worldPts = [];
+      for (let i = 0; i < pts.length; i += 2) {
+        worldPts.push({
+          x: +(wt.a * pts[i] + wt.c * pts[i+1] + wt.tx).toFixed(2),
+          y: +(wt.b * pts[i] + wt.d * pts[i+1] + wt.ty).toFixed(2),
+        });
+      }
+      console.log('  world points:', worldPts);
+    }
     drawShape(page, shape, fillStyle, lineStyle, wt);
   }
 }
 
 function traverseAndDraw(page: any, container: PIXI.Container): void {
+  pdfShapeIdx = 0;
   for (const child of container.children) {
     if (child instanceof PIXI.Container && !(child instanceof PIXI.Graphics)) {
       traverseAndDraw(page, child);

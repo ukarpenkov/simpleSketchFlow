@@ -1,5 +1,6 @@
 import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
 import * as PIXI from 'pixi.js';
+import { resetShapeIndex } from '../debug/coordLog';
 
 // NOTE: PIXI.Sprite (bitmap images) is skipped here — it would be embedded
 // as a bitmap in PDF export. This is acceptable per the specification.
@@ -10,11 +11,12 @@ function colorToHex(color: number): string {
 
 function applyTransform(ck: CanvasKit, canvas: Canvas, obj: PIXI.DisplayObject): void {
   const wt = obj.worldTransform;
-  // Skia uses row-major: [scaleX, skewX, 0, skewY, scaleY, 0, tx, ty, 1]
-  // Pixi uses column-major: a=scaleX, b=skewY, c=skewX, d=scaleY
+  // CanvasKit uses row-vector convention: [x, y, 1] * M
+  // Pixi: x'=a*x+c*y+tx, y'=b*x+d*y+ty
+  // Matrix rows: [a, b, 0] / [c, d, 0] / [tx, ty, 1]
   const matrix = new Float32Array([
-    wt.a,  wt.c,  0,
-    wt.b,  wt.d,  0,
+    wt.a,  wt.b,  0,
+    wt.c,  wt.d,  0,
     wt.tx, wt.ty, 1,
   ]);
   canvas.save();
@@ -38,14 +40,26 @@ function setLineStyle(ck: CanvasKit, paint: Paint, lineStyle: any): void {
   }
 }
 
+let skiaShapeIdx = 0;
+
 export function convertPixiContainerToSkia(
+  ck: CanvasKit,
+  canvas: Canvas,
+  container: PIXI.Container,
+): void {
+  resetShapeIndex();
+  skiaShapeIdx = 0;
+  convertPixiContainerToSkiaInner(ck, canvas, container);
+}
+
+function convertPixiContainerToSkiaInner(
   ck: CanvasKit,
   canvas: Canvas,
   container: PIXI.Container,
 ): void {
   for (const child of container.children) {
     if (child instanceof PIXI.Container && !(child instanceof PIXI.Graphics)) {
-      convertPixiContainerToSkia(ck, canvas, child);
+      convertPixiContainerToSkiaInner(ck, canvas, child);
       continue;
     }
 
@@ -55,6 +69,20 @@ export function convertPixiContainerToSkia(
     const graphicsData = graphics.geometry.graphicsData;
 
     applyTransform(ck, canvas, graphics);
+
+    const wt = graphics.worldTransform;
+    const matrix = new Float32Array([wt.a, wt.b, 0, wt.c, wt.d, 0, wt.tx, wt.ty, 1]);
+    console.log(
+      `%c[Skia] shape #${skiaShapeIdx} matrix:`,
+      'color: #ff922b; font-weight: bold',
+      `[${[...matrix].map(v => +v.toFixed(4)).join(', ')}]`,
+      '| wt:', {
+        a: +wt.a.toFixed(4), b: +wt.b.toFixed(4),
+        c: +wt.c.toFixed(4), d: +wt.d.toFixed(4),
+        tx: +wt.tx.toFixed(2), ty: +wt.ty.toFixed(2),
+      },
+    );
+    skiaShapeIdx++;
 
     for (const data of graphicsData) {
       const { shape, fillStyle, lineStyle } = data;
@@ -81,9 +109,11 @@ export function convertPixiContainerToSkia(
 function drawShape(ck: CanvasKit, canvas: Canvas, paint: Paint, shape: any): void {
   if (shape instanceof PIXI.Rectangle) {
     const rect = ck.XYWHRect(shape.x, shape.y, shape.width, shape.height);
+    console.log(`  [Skia] rect local: x=${shape.x}, y=${shape.y}, w=${shape.width}, h=${shape.height}`);
     canvas.drawRect(rect, paint);
   } else if (shape instanceof PIXI.Ellipse) {
     const rect = ck.XYWHRect(shape.x - shape.width / 2, shape.y - shape.height / 2, shape.width, shape.height);
+    console.log(`  [Skia] ellipse local: cx=${shape.x}, cy=${shape.y}, w=${shape.width}, h=${shape.height}`);
     canvas.drawOval(rect, paint);
   } else if (shape instanceof PIXI.Polygon) {
     const points = shape.points;

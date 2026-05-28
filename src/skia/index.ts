@@ -16,6 +16,8 @@ export async function initSkia(canvasId: string): Promise<void> {
       throw new Error(`Failed to create surface for canvas "${canvasId}"`);
     }
     skiaCanvas = surface.getCanvas();
+    const el = document.getElementById(canvasId) as HTMLCanvasElement;
+    console.log('[Skia] surface created:', { width: el.width, height: el.height });
   } catch (error) {
     console.error('Failed to initialize CanvasKit WASM:', error);
     const el = document.getElementById(canvasId);
@@ -35,5 +37,13 @@ export function renderSkiaScene(container: Container): void {
   const darkBg = ck.Color(0.1, 0.1, 0.18, 1);
   skiaCanvas.clear(darkBg);
   convertPixiContainerToSkia(ck, skiaCanvas, container);
+
+  // Diagnostic: draw a test rectangle at fixed position
+  const testPaint = new ck.Paint();
+  testPaint.setColor(ck.Color(1, 0, 0, 1));
+  testPaint.setStyle(ck.PaintStyle.Fill);
+  skiaCanvas.drawRect(ck.XYWHRect(10, 10, 80, 40), testPaint);
+  testPaint.delete();
+
   surface.flush();
 }

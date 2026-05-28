@@ -4,12 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SimpleSketchFlow</title>
-  <script type="module" crossorigin src="/assets/index-ChT91Jt0.js"></script>
+  <script type="module" crossorigin src="/assets/index-Cm1cO7Cw.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DTTuQtY8.css">
 </head>
 <body>
   <div id="app">
-    <canvas id="pixi-canvas" width="800" height="600"></canvas>
-    <canvas id="skia-canvas" width="800" height="600"></canvas>
+    <h1>simpleSketchFlow</h1>
+    <div class="canvas-row">
+      <div class="canvas-wrapper">
+        <label>Pixi.js Canvas</label>
+        <canvas id="pixi-canvas" width="800" height="600"></canvas>
+      </div>
+      <div class="canvas-wrapper">
+        <label>Skia Canvas</label>
+        <canvas id="skia-canvas" width="800" height="600"></canvas>
+      </div>
+    </div>
     <div id="controls">
       <button id="btn-generate">Сгенерировать</button>
       <button id="btn-export">Экспорт PDF</button>

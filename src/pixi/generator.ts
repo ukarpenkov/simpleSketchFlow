@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { logPixiShape, resetShapeIndex } from '../debug/coordLog';
 
 type ShapeType = 'rect' | 'ellipse' | 'line';
 
@@ -87,6 +88,7 @@ function applyTransform(obj: PIXI.Container): void {
 }
 
 export function generateRandomShape(container: PIXI.Container): void {
+  resetShapeIndex();
   const useSubContainer = Math.random() < 0.3;
 
   if (useSubContainer) {
@@ -106,5 +108,35 @@ export function generateRandomShape(container: PIXI.Container): void {
     const g = createRandomGraphics();
     applyTransform(g);
     container.addChild(g);
+  }
+
+  // Force Pixi to update worldTransform, then log all shapes
+  container.updateTransform();
+  logContainerShapes(container);
+}
+
+function logContainerShapes(container: PIXI.Container): void {
+  for (const child of container.children) {
+    if (child instanceof PIXI.Container && !(child instanceof PIXI.Graphics)) {
+      logContainerShapes(child);
+      continue;
+    }
+    if (!(child instanceof PIXI.Graphics)) continue;
+    const g = child;
+    const data = g.geometry.graphicsData;
+    for (const d of data) {
+      const shape = d.shape;
+      let localShape: { type: string; x: number; y: number; w: number; h: number; points?: number[] };
+      if (shape instanceof PIXI.Rectangle) {
+        localShape = { type: 'rect', x: shape.x, y: shape.y, w: shape.width, h: shape.height };
+      } else if (shape instanceof PIXI.Ellipse) {
+        localShape = { type: 'ellipse', x: shape.x, y: shape.y, w: shape.width, h: shape.height };
+      } else if (shape instanceof PIXI.Polygon) {
+        localShape = { type: 'line', x: 0, y: 0, w: 0, h: 0, points: [...shape.points] };
+      } else {
+        continue;
+      }
+      logPixiShape('Pixi', g, localShape);
+    }
   }
 }
