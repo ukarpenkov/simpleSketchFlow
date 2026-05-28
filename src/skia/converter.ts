@@ -11,13 +11,12 @@ function colorToHex(color: number): string {
 
 function applyTransform(ck: CanvasKit, canvas: Canvas, obj: PIXI.DisplayObject): void {
   const wt = obj.worldTransform;
-  // CanvasKit uses row-vector convention: [x, y, 1] * M
-  // Pixi: x'=a*x+c*y+tx, y'=b*x+d*y+ty
-  // Matrix rows: [a, b, 0] / [c, d, 0] / [tx, ty, 1]
+  // SkMatrix row-major: [scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2]
+  // Pixi: x' = a*x + c*y + tx, y' = b*x + d*y + ty
   const matrix = new Float32Array([
-    wt.a,  wt.b,  0,
-    wt.c,  wt.d,  0,
-    wt.tx, wt.ty, 1,
+    wt.a, wt.c, wt.tx,
+    wt.b, wt.d, wt.ty,
+    0, 0, 1,
   ]);
   canvas.save();
   canvas.concat(matrix);

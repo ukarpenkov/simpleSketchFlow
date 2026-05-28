@@ -34,16 +34,9 @@ export async function initSkia(canvasId: string): Promise<void> {
 
 export function renderSkiaScene(container: Container): void {
   if (!surface || !ck || !skiaCanvas) return;
+  container.updateTransform();
   const darkBg = ck.Color(0.1, 0.1, 0.18, 1);
   skiaCanvas.clear(darkBg);
   convertPixiContainerToSkia(ck, skiaCanvas, container);
-
-  // Diagnostic: draw a test rectangle at fixed position
-  const testPaint = new ck.Paint();
-  testPaint.setColor(ck.Color(1, 0, 0, 1));
-  testPaint.setStyle(ck.PaintStyle.Fill);
-  skiaCanvas.drawRect(ck.XYWHRect(10, 10, 80, 40), testPaint);
-  testPaint.delete();
-
   surface.flush();
 }

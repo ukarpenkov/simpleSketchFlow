@@ -11,12 +11,44 @@ function colorToRgb(color: number): [number, number, number] {
   ];
 }
 
+function toPdfY(canvasY: number, pageHeight: number): number {
+  return pageHeight - canvasY;
+}
+
+function transformPoint(
+  wt: PIXI.Matrix,
+  x: number,
+  y: number,
+  pageHeight: number,
+): { x: number; y: number } {
+  const canvasX = wt.a * x + wt.c * y + wt.tx;
+  const canvasY = wt.b * x + wt.d * y + wt.ty;
+  return { x: canvasX, y: toPdfY(canvasY, pageHeight) };
+}
+
+function styleOpts(fillStyle: any, lineStyle: any): Record<string, unknown> {
+  const opts: Record<string, unknown> = {};
+  if (fillStyle && fillStyle.visible !== false) {
+    const [r, g, b] = colorToRgb(fillStyle.color);
+    opts.color = rgb(r, g, b);
+    opts.opacity = fillStyle.alpha ?? 1;
+  }
+  if (lineStyle && lineStyle.visible !== false && lineStyle.width > 0) {
+    const [r, g, b] = colorToRgb(lineStyle.color);
+    opts.borderColor = rgb(r, g, b);
+    opts.borderWidth = lineStyle.width;
+    opts.opacity = lineStyle.alpha ?? 1;
+  }
+  return opts;
+}
+
 function drawShape(
   page: any,
   shape: any,
   fillStyle: any,
   lineStyle: any,
   wt: PIXI.Matrix,
+  pageHeight: number,
 ): void {
   if (shape instanceof PIXI.Rectangle) {
     const x = shape.x;
@@ -29,53 +61,31 @@ function drawShape(
       { x: x + w, y },
       { x: x + w, y: y + h },
       { x, y: y + h },
-    ].map((c) => ({
-      x: wt.a * c.x + wt.c * c.y + wt.tx,
-      y: wt.b * c.x + wt.d * c.y + wt.ty,
-    }));
+    ].map((c) => transformPoint(wt, c.x, c.y, pageHeight));
 
-    const opts: any = {};
-    if (fillStyle && fillStyle.visible !== false) {
-      const [r, g, b] = colorToRgb(fillStyle.color);
-      opts.color = rgb(r, g, b);
-      opts.opacity = fillStyle.alpha ?? 1;
-    }
-    if (lineStyle && lineStyle.visible !== false && lineStyle.width > 0) {
-      const [r, g, b] = colorToRgb(lineStyle.color);
-      opts.borderColor = rgb(r, g, b);
-      opts.borderWidth = lineStyle.width;
-      opts.opacity = lineStyle.alpha ?? 1;
-    }
-
-    // Use SVG path for rotated/skewed rectangles (pdf-lib drawRectangle doesn't support rotation)
     const path =
       `M ${corners[0].x} ${corners[0].y} ` +
       `L ${corners[1].x} ${corners[1].y} ` +
       `L ${corners[2].x} ${corners[2].y} ` +
       `L ${corners[3].x} ${corners[3].y} Z`;
-    page.drawSvgPath(path, opts);
+    page.drawSvgPath(path, styleOpts(fillStyle, lineStyle));
     return;
   }
 
   if (shape instanceof PIXI.Ellipse) {
-    const cx = wt.a * shape.x + wt.c * shape.y + wt.tx;
-    const cy = wt.b * shape.x + wt.d * shape.y + wt.ty;
-    const rx = Math.sqrt((wt.a * shape.width) ** 2 + (wt.b * shape.width) ** 2) / 2;
-    const ry = Math.sqrt((wt.c * shape.height) ** 2 + (wt.d * shape.height) ** 2) / 2;
-
-    const opts: any = { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2 };
-    if (fillStyle && fillStyle.visible !== false) {
-      const [r, g, b] = colorToRgb(fillStyle.color);
-      opts.color = rgb(r, g, b);
-      opts.opacity = fillStyle.alpha ?? 1;
+    const segments = 32;
+    const parts: string[] = [];
+    const halfW = shape.width / 2;
+    const halfH = shape.height / 2;
+    for (let i = 0; i <= segments; i++) {
+      const t = (i / segments) * Math.PI * 2;
+      const lx = shape.x + halfW * Math.cos(t);
+      const ly = shape.y + halfH * Math.sin(t);
+      const p = transformPoint(wt, lx, ly, pageHeight);
+      parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
     }
-    if (lineStyle && lineStyle.visible !== false && lineStyle.width > 0) {
-      const [r, g, b] = colorToRgb(lineStyle.color);
-      opts.borderColor = rgb(r, g, b);
-      opts.borderWidth = lineStyle.width;
-      opts.opacity = lineStyle.alpha ?? 1;
-    }
-    page.drawEllipse(opts);
+    parts.push('Z');
+    page.drawSvgPath(parts.join(' '), styleOpts(fillStyle, lineStyle));
     return;
   }
 
@@ -85,27 +95,14 @@ function drawShape(
 
     const parts: string[] = [];
     for (let i = 0; i < pts.length; i += 2) {
-      const x = wt.a * pts[i] + wt.c * pts[i + 1] + wt.tx;
-      const y = wt.b * pts[i] + wt.d * pts[i + 1] + wt.ty;
-      parts.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`);
+      const p = transformPoint(wt, pts[i], pts[i + 1], pageHeight);
+      parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`);
     }
     if (shape.closeStroke) parts.push('Z');
     const path = parts.join(' ');
     if (!path) return;
 
-    const opts: any = {};
-    if (fillStyle && fillStyle.visible !== false) {
-      const [r, g, b] = colorToRgb(fillStyle.color);
-      opts.color = rgb(r, g, b);
-      opts.opacity = fillStyle.alpha ?? 1;
-    }
-    if (lineStyle && lineStyle.visible !== false && lineStyle.width > 0) {
-      const [r, g, b] = colorToRgb(lineStyle.color);
-      opts.borderColor = rgb(r, g, b);
-      opts.borderWidth = lineStyle.width;
-      opts.opacity = lineStyle.alpha ?? 1;
-    }
-    page.drawSvgPath(path, opts);
+    page.drawSvgPath(path, styleOpts(fillStyle, lineStyle));
   }
 }
 
@@ -114,6 +111,7 @@ let pdfShapeIdx = 0;
 function processGraphics(
   page: any,
   graphics: PIXI.Graphics,
+  pageHeight: number,
 ): void {
   const graphicsData = graphics.geometry.graphicsData;
   const wt = graphics.worldTransform;
@@ -159,20 +157,20 @@ function processGraphics(
       }
       console.log('  world points:', worldPts);
     }
-    drawShape(page, shape, fillStyle, lineStyle, wt);
+    drawShape(page, shape, fillStyle, lineStyle, wt, pageHeight);
   }
 }
 
-function traverseAndDraw(page: any, container: PIXI.Container): void {
+function traverseAndDraw(page: any, container: PIXI.Container, pageHeight: number): void {
   pdfShapeIdx = 0;
   for (const child of container.children) {
     if (child instanceof PIXI.Container && !(child instanceof PIXI.Graphics)) {
-      traverseAndDraw(page, child);
+      traverseAndDraw(page, child, pageHeight);
       continue;
     }
 
     if (child instanceof PIXI.Graphics) {
-      processGraphics(page, child);
+      processGraphics(page, child, pageHeight);
     }
   }
 }
@@ -190,7 +188,8 @@ export async function exportToPDF(
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([width, height]);
 
-  traverseAndDraw(page, mainContainer);
+  mainContainer.updateTransform();
+  traverseAndDraw(page, mainContainer, height);
 
   const pdfBytes = await pdfDoc.save();
   const ab = new ArrayBuffer(pdfBytes.byteLength);
