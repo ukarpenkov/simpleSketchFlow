@@ -1,5 +1,9 @@
 # simpleSketchFlow
 
+## Попробовать онлайн
+
+**[GH-PAGES](https://ukarpenkov.github.io/simpleSketchFlow/)**
+
 Интерактивное приложение для генерации случайных 2D-фигур с двойным рендерингом через Pixi.js и Skia (CanvasKit WASM) и экспортом в векторный PDF.
 
 ## Требования
